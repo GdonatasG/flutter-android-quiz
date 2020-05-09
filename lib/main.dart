@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quizzler/QuizBrain.dart';
 
 void main() => runApp(Quizzler());
 
@@ -25,6 +26,74 @@ class QuizPage extends StatefulWidget {
 }
 
 class _QuizPageState extends State<QuizPage> {
+  List<Icon> listOfUserAnswers = new List();
+  QuizBrain quizBrain = QuizBrain();
+
+  void checkAnswer(bool userChoice) {
+    // This function checks answer of the question
+    // Adds an Icon into user answers
+    // Increases current number of the question
+
+    setState(() {
+      if (quizBrain.getCurrentQuestionAnswer() == userChoice) {
+        quizBrain.answeredRight();
+        listOfUserAnswers.add(Icon(
+          Icons.done,
+          color: Colors.green,
+        ));
+      } else {
+        listOfUserAnswers.add(Icon(
+          Icons.close,
+          color: Colors.red,
+        ));
+      }
+      if (quizBrain.moreQuestionsLeft()) {
+        quizBrain.goToNextQuestion();
+      } else {
+        showQuizOverDialog(context);
+      }
+    });
+  }
+
+  void clearQuizCache() {
+    setState(() {
+      listOfUserAnswers = [];
+      quizBrain.clearQuiz();
+    });
+  }
+
+  showQuizOverDialog(BuildContext context) {
+    // set up the buttons
+    Widget closeBtn = FlatButton(
+      child: Text("OK"),
+      onPressed: () {
+        // closing dialog
+        Navigator.of(context).pop();
+        // clearing Quiz
+        clearQuizCache();
+      },
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Quizzler!"),
+      content: Text(
+          "Over! ${quizBrain.getRightAnswers()} out of ${quizBrain.getNumberOfTotalQuestions()} right answers."),
+      actions: [
+        closeBtn,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -37,7 +106,7 @@ class _QuizPageState extends State<QuizPage> {
             padding: EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                'This is where the question text will go.',
+                quizBrain.getCurrentQuestionTitle(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 25.0,
@@ -62,6 +131,7 @@ class _QuizPageState extends State<QuizPage> {
               ),
               onPressed: () {
                 //The user picked true.
+                checkAnswer(true);
               },
             ),
           ),
@@ -79,12 +149,14 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
               onPressed: () {
-                //The user picked false.
+                checkAnswer(false);
               },
             ),
           ),
         ),
-        //TODO: Add a Row here as your score keeper
+        Row(
+          children: listOfUserAnswers,
+        ),
       ],
     );
   }
